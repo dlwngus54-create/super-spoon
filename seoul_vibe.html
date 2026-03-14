@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seoul Weather Vibe - 오늘의 추천 음악</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --text-main: #222;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: var(--bg-color);
+            transition: background 1.5s ease;
+            color: var(--text-main);
+        }
+
+        .container {
+            width: 90%;
+            max-width: 450px;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .weather-section { margin-bottom: 20px; }
+        .city { font-size: 1.2rem; font-weight: 300; margin-bottom: 5px; }
+        .temp { font-size: 3.5rem; font-weight: 700; margin: 5px 0; }
+        .condition { font-size: 1.3rem; font-weight: 500; color: #555; }
+
+        .recommendation-box {
+            margin-top: 25px;
+            border-top: 1px solid rgba(0,0,0,0.05);
+            padding-top: 20px;
+        }
+
+        .vibe-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 15px; color: #007aff; }
+        
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 비율 */
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .quote {
+            margin-top: 15px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #444;
+            font-style: italic;
+        }
+
+        /* 날씨별 테마 배경색 */
+        body.sunny { background: linear-gradient(135deg, #FFDEE9 0%, #B5FFFC 100%); }
+        body.cloudy { background: linear-gradient(135deg, #E0EAFC 0%, #CFDEF3 100%); }
+        body.rainy { background: linear-gradient(135deg, #606c88 0%, #3f4c6b 100%); }
+        body.snowy { background: linear-gradient(135deg, #e6e9f0 0%, #eef1f5 100%); }
+    </style>
+</head>
+<body class="cloudy">
+
+    <div class="container">
+        <div class="weather-section">
+            <div class="city">Seoul, Korea</div>
+            <div class="temp" id="temp">--°C</div>
+            <div class="condition" id="condition">날씨 확인 중...</div>
+        </div>
+
+        <div class="recommendation-box">
+            <div class="vibe-title" id="vibe-title">오늘의 서울 바이브</div>
+            <div class="video-container" id="video-container">
+                </div>
+            <p class="quote" id="quote">잠시만 기다려주세요. 날씨에 맞는 음악을 찾고 있습니다.</p>
+        </div>
+    </div>
+
+    <script>
+        // 1. 서울 날씨 데이터 가져오기 (OpenWeatherMap 무료 API 키 포함)
+        const API_KEY = '87f353069b2605f25a987d6023774883'; 
+        const CITY = 'Seoul';
+
+        async function getWeatherData() {
+            try {
+                const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${CITY}&appid=${API_KEY}&units=metric&lang=kr`);
+                const data = await response.json();
+                
+                const temp = Math.round(data.main.temp);
+                const condition = data.weather[0].main; // Clear, Clouds, Rain, Snow 등
+                const description = data.weather[0].description;
+
+                updatePage(temp, condition, description);
+            } catch (error) {
+                console.error("데이터 로드 실패:", error);
+                document.getElementById('condition').innerText = "날씨 정보를 불러올 수 없습니다.";
+            }
+        }
+
+        // 2. 날씨에 따른 음악 매칭 로직 (이것이 바이브 코딩의 핵심!)
+        function updatePage(temp, condition, description) {
+            document.getElementById('temp').innerText = `${temp}°C`;
+            document.getElementById('condition').innerText = description;
+
+            let videoId = '';
+            let quote = '';
+            let themeClass = '';
+            let vibeTitle = '';
+
+            // 날씨 상태별 분기 로직
+            if (condition === 'Rain' || condition === 'Drizzle' || condition === 'Thunderstorm') {
+                themeClass = 'rainy';
+                videoId = 'n_vG0YmO6Yc'; // 비오는 날 재즈 플레이리스트
+                vibeTitle = "촉촉한 빗소리와 재즈";
+                quote = "서울에 비가 오네요. 창밖 빗소리와 잘 어울리는 차분한 재즈를 준비했어요.";
+            } 
+            else if (condition === 'Snow') {
+                themeClass = 'snowy';
+                videoId = 'rZ-Yf86G53k'; // 겨울 감성 발라드
+                vibeTitle = "포근한 눈꽃 발라드";
+                quote = "하얀 눈이 내리는 서울, 마음까지 따뜻해지는 감성 음악입니다.";
+            }
+            else if (condition === 'Clear') {
+                themeClass = 'sunny';
+                // 맑은 날은 온도에 따라 한 번 더 나눔
+                if (temp > 20) {
+                    videoId = '0S_v_q5pY8E'; // 시원한 시티팝
+                    vibeTitle = "청량한 서울 시티팝";
+                    quote = "햇살 가득한 서울! 기분까지 맑아지는 경쾌한 음악 어떠세요?";
+                } else {
+                    videoId = 'g_F30H07x8g'; // 따뜻한 어쿠스틱
+                    vibeTitle = "햇살 담은 어쿠스틱";
+                    quote = "맑고 선선한 오늘, 산책하며 듣기 좋은 부드러운 선율입니다.";
+                }
+            }
+            else { //
